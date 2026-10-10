@@ -87,11 +87,18 @@ def rect(x: float, y: float, r: float = 0.0) -> CrossSection:
     if r <= 0:
         return CrossSection.square((x, y), center=True)
     r = min(r, x / 2 - 1e-3, y / 2 - 1e-3)
-    return CrossSection.square((x - 2 * r, y - 2 * r), center=True).offset(r, JoinType.Round)
+    return offset(CrossSection.square((x - 2 * r, y - 2 * r), center=True), r)
 
 
 def circle(d: float) -> CrossSection:
     return CrossSection.circle(d / 2)
+
+
+def offset(cs: CrossSection, delta: float, join: JoinType = JoinType.Round) -> CrossSection:
+    """Grow (+) or shrink (-) a profile. Always use this instead of
+    ``cs.offset``: Clipper can leave vertices ~1e-8 mm apart where arcs meet
+    lines, which become zero-length edges that tear the exported STL."""
+    return cs.offset(delta, join).simplify(1e-4)
 
 
 def polygon(points: Sequence[Sequence[float]]) -> CrossSection:
@@ -156,7 +163,7 @@ def extrude(cs: CrossSection, h: float, bottom_chamfer: float = 0.0, top_chamfer
             # bottom: inset shrinks as we go up; top: inset grows as we go up
             frac = (steps - i) / steps if direction == 1 else (i + 1) / steps
             inset = c * frac
-            layer = cs.offset(-inset, JoinType.Round)
+            layer = offset(cs, -inset)
             if layer.is_empty():
                 continue
             parts.append(extrude_plain(layer, dz).translate((0, 0, z0 + i * dz)))

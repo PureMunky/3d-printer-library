@@ -106,6 +106,18 @@ Then:
 
 ## Pitfalls
 
+- **Use `shapes.offset(cs, d)`, never `cs.offset(...)`.** Raw Clipper offsets
+  can leave vertices ~1e-8 mm apart that become zero-length edges and tear
+  the exported STL (the check reports `not-watertight` / hundreds of
+  `floating-body`).
+- **Never let booleans meet tangentially or flush** (a circle touching a
+  box face, cutters ending exactly on a face). Sink joined shapes ~0.3 mm into
+  each other and overshoot cutters.
+- **Raised text strokes must clear `min_wall`:** small labels (< ~7 mm) need
+  `offset(label, 0.15–0.2)` or the thin-wall check (rightly) warns.
+- `build` checks the STL **as written to disk**, the way a slicer reads it. If it
+  fails there but the in-memory solid looks fine, look for micro-edges.
+
 - `Manifold.cylinder` / `extrude` start at z=0; `teardrop` and cutters are
   centred/overshoot — always `on_bed()` the final part (build does this too).
 - Subtract cutters that **overshoot** the faces (`hole` does) or you get

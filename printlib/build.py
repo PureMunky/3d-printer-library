@@ -28,7 +28,7 @@ from types import ModuleType
 from manifold3d import Manifold
 
 from .check import Report, check_mesh
-from .meshio import export_stl, to_trimesh
+from .meshio import export_stl, load_mesh, to_trimesh
 from .profile import load_printer
 from .render import render
 from .shapes import on_bed
@@ -103,6 +103,9 @@ def build_model(
         name = f"{slug}-{part}" if part else slug
         mesh = to_trimesh(solid)
         stl = export_stl(mesh, out_dir / f"{name}.stl")
+        # Check the file as a slicer will see it (float32 STL, vertices merged
+        # by position), not the in-memory solid.
+        mesh = load_mesh(stl)
         report = check_mesh(mesh, name=name, material=material, infill=infill, supports=supports)
         png = out_dir / (f"preview-{part}.png" if part else "preview.png")
         if preview:

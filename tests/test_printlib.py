@@ -124,3 +124,53 @@ def test_render_does_not_flag_exact_45_degree_chamfers(tmp_path):
     red_like = (px[:, 0] > 150) & (px[:, 1] < 100) & (px[:, 2] < 100)
     assert not red_like.any()
     assert RED[0] > 150  # sanity: the check above would catch the overhang colour
+
+
+def test_thin_wall_ignores_sharp_corners_on_thick_features():
+    from printlib.shapes import offset, rect
+
+    # Raised plus signs with 1.2 mm strokes: lots of square corners, nothing thin.
+    plus = rect(6, 1.2) + rect(1.2, 6)
+    base = box(60, 20, 2)
+    for i in range(6):
+        base = label_face(base, plus.translate((-25 + i * 10, 0)), "+z", depth=0.8, raised=True)
+    assert "thin-wall" not in codes(check_mesh(to_trimesh(base)), WARN)
+    # Same pattern with 0.5 mm strokes must still be flagged.
+    thin = box(60, 20, 2)
+    for i in range(6):
+        thin = label_face(thin, (rect(6, 0.5) + rect(0.5, 6)).translate((-25 + i * 10, 0)), "+z", depth=0.8, raised=True)
+    assert "thin-wall" in codes(check_mesh(to_trimesh(thin)), WARN)
+    _ = offset
+
+
+def test_offset_has_no_micro_edges():
+    from manifold3d import CrossSection
+
+    from printlib.shapes import offset, rect
+
+    # Circle + rectangle neck: Clipper leaves ~1e-8 mm vertex pairs here without simplify.
+    knob = CrossSection.circle(4).translate((4, 0)) + rect(3, 4.4).translate((1, 0))
+    pts = np.vstack(offset(knob, 0.25).to_polygons())
+    seg = np.linalg.norm(np.diff(np.vstack([pts, pts[:1]]), axis=0), axis=1)
+    assert seg.min() > 1e-4
+
+
+def test_built_stl_on_disk_is_watertight(tmp_path):
+    from printlib.meshio import load_mesh
+
+    for r in build_model(MODELS / "word-part-tiles", out_dir=tmp_path, preview=False):
+        assert load_mesh(r.stl).is_watertight, r.stl.name
+
+
+def test_render_outlines_shallow_relief(tmp_path):
+    from PIL import Image
+
+    from printlib.render import render
+    from printlib.shapes import rect
+
+    plate = label_face(box(150, 40, 3), rect(10, 10), "+z", depth=0.6, raised=True)
+    out = render(plate, tmp_path / "r.png", views=("top",), size=600)
+    px = np.asarray(Image.open(out).convert("L"))
+    # Edges of the 0.6 mm raised square sit near the image centre; they must be drawn dark.
+    centre = px[320:405, 260:340]  # sheet header is 62 px; square is centred on (362, 300)
+    assert (centre < 60).sum() > 40

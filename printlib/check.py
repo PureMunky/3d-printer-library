@@ -270,12 +270,16 @@ def _check_thin(mesh: trimesh.Trimesh, r: Report, p: Printer) -> None:
     zs = np.linspace(lo[2] + 0.1, hi[2] - 0.1, n) if h > 0.3 else [lo[2] + h / 2]
     thin_z, worst = [], 0.0
     for z in zs:
-        cs = solid.slice(float(z))
+        cs = solid.slice(float(z)).simplify(0.02)  # drop sub-0.02 mm detail: big speedup on text
         a = cs.area()
         if a <= 0:
             continue
-        opened = cs.offset(-min_wall / 2, JoinType.Round).offset(min_wall / 2, JoinType.Round)
-        lost = a - opened.area()
+        # 16 segments/rev is plenty for sub-mm rounds and ~10x faster than the modeling default.
+        opened = cs.offset(-min_wall / 2, JoinType.Round, circular_segments=16).offset(min_wall / 2, JoinType.Round, circular_segments=16)
+        # Opening also shaves slivers (< ~0.2 mm thick) off every sharp convex
+        # corner, which adds up on small text. Erode what was lost a little so
+        # only genuinely thin features (which leave a strip) are counted.
+        lost = (cs - opened).offset(-0.1, JoinType.Round, circular_segments=16).area()
         if lost > max(0.5, 0.02 * a):
             thin_z.append(round(float(z), 1))
             worst = max(worst, lost / a)

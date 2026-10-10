@@ -90,8 +90,15 @@ def _raster(verts, faces, normals, colors, view, size, ctr, half):
         a_hit, b_hit = hit[: size - dy, : size - dx], hit[dy:, dx:]
         na, nb = nbuf[: size - dy, : size - dx], nbuf[dy:, dx:]
         za, zb = zf[: size - dy, : size - dx], zf[dy:, dx:]
-        e = (a_hit != b_hit) | (a_hit & b_hit & (((na * nb).sum(-1) < 0.95) | (np.abs(za - zb) > 0.2 + 3.0 / scale)))
+        e = (a_hit != b_hit) | (a_hit & b_hit & ((na * nb).sum(-1) < 0.95))
         edge[: size - dy, : size - dx] |= e
+        # Depth steps (raised/engraved detail on parallel faces): the second
+        # difference of depth is ~0 across any plane, sloped or not, and large
+        # across a step — so this catches sub-mm relief at any zoom.
+        z0, z1, z2 = zf[: size - 2 * dy, : size - 2 * dx], zf[dy : size - dy, dx : size - dx], zf[2 * dy :, 2 * dx :]
+        all_hit = hit[: size - 2 * dy, : size - 2 * dx] & hit[dy : size - dy, dx : size - dx] & hit[2 * dy :, 2 * dx :]
+        step = all_hit & (np.abs(z0 - 2 * z1 + z2) > 0.3)
+        edge[dy : size - dy, dx : size - dx] |= step
     out[edge] = out[edge] * 0.35
     return Image.fromarray(out.clip(0, 255).astype(np.uint8))
 

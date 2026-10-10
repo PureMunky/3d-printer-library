@@ -1,0 +1,110 @@
+from pathlib import Path
+
+import numpy as np
+import pytest
+import trimesh
+
+from printlib.build import build_model, parse_overrides
+from printlib.check import ERROR, WARN, check_mesh
+from printlib.meshio import to_trimesh
+from printlib.orient import best_orientation
+from printlib.profile import load_printer
+from printlib.shapes import box, cylinder, difference, label_face, on_bed, teardrop, text2d
+
+MODELS = Path(__file__).resolve().parent.parent / "models"
+
+
+def codes(report, level=None):
+    return {f.code for f in report.findings if level is None or f.level == level}
+
+
+def test_profile():
+    p = load_printer()
+    assert p.build_volume == (320, 320, 400)
+    assert p.usable_volume[0] <= p.build_volume[0]
+    assert p.material("pla").nozzle == 210
+    assert p.tol("slide") > p.tol("press")
+
+
+def test_box_is_valid_and_on_bed():
+    m = box(30, 20, 10, r=3, bottom_chamfer=0.4)
+    t = to_trimesh(m)
+    assert t.is_watertight
+    assert np.allclose(t.bounds, [[-15, -10, 0], [15, 10, 10]], atol=1e-4)
+    rep = check_mesh(t)
+    assert rep.ok and not codes(rep, WARN)
+
+
+def test_too_big_is_error():
+    rep = check_mesh(to_trimesh(box(500, 20, 10)))
+    assert "too-big" in codes(rep, ERROR)
+
+
+def test_diagonal_fit_is_warning():
+    rep = check_mesh(to_trimesh(box(350, 30, 10)))
+    assert "fits-diagonally" in codes(rep, WARN)
+
+
+def test_overhang_detected_and_teardrop_avoids_it():
+    # Mushroom: wide cap on a thin stem -> big flat overhang
+    mush = on_bed(box(10, 10, 20) + box(40, 40, 5).translate((0, 0, 20)))
+    rep = check_mesh(to_trimesh(mush))
+    assert codes(rep, WARN) & {"overhang", "long-bridge"}
+
+    block = box(30, 20, 20)
+    round_hole = difference(block, cylinder(8, 40).rotate((0, 90, 0)).translate((-20, 0, 10)))
+    tear_hole = difference(block, teardrop(8, 40, axis="x").translate((0, 0, 10)))
+    assert "overhang" in codes(check_mesh(to_trimesh(round_hole)), WARN)
+    assert "overhang" not in codes(check_mesh(to_trimesh(tear_hole)), WARN)
+
+
+def test_thin_wall_warning():
+    thin = difference(box(30, 30, 10), box(29.2, 29.2, 10).translate((0, 0, 1)))  # 0.4 mm walls
+    assert "thin-wall" in codes(check_mesh(to_trimesh(thin)), WARN)
+    ok = difference(box(30, 30, 10), box(26.8, 26.8, 10).translate((0, 0, 1)))  # 1.6 mm walls
+    assert "thin-wall" not in codes(check_mesh(to_trimesh(ok)), WARN)
+
+
+def test_floating_body_and_open_mesh():
+    a = to_trimesh(box(10, 10, 10))
+    b = to_trimesh(box(10, 10, 10).translate((20, 0, 5)))
+    assert "floating-body" in codes(check_mesh(trimesh.util.concatenate([a, b])), ERROR)
+    opened = a.copy()
+    opened.update_faces(np.arange(len(opened.faces) - 1))
+    assert "not-watertight" in codes(check_mesh(opened), ERROR)
+
+
+def test_text_and_labels():
+    cs = text2d("Hi 42", 8)
+    assert cs.area() > 20
+    lo, hi = np.array(cs.bounds()).reshape(2, 2)
+    assert abs((lo + hi)[0]) < 1e-6  # centred
+    base = box(40, 20, 5)
+    engraved = label_face(base, cs, "+z")
+    raised = label_face(base, cs, "+z", raised=True)
+    assert engraved.volume() < base.volume() < raised.volume()
+
+
+def test_orient_flips_upside_down_cone():
+    cone = to_trimesh(cylinder(30, 30, d2=0.0))  # tip up, flat base down
+    cone.apply_transform(trimesh.transformations.rotation_matrix(np.pi, [1, 0, 0]))
+    oriented, info = best_orientation(cone)
+    assert info["contact_mm2"] > 500
+    assert oriented.bounds[0][2] == pytest.approx(0, abs=1e-6)
+
+
+def test_parse_overrides_types():
+    d = {"w": 10.0, "n": 2, "flag": False, "label": "", "xs": [0.1]}
+    out = parse_overrides(["w=12.5", "n=3", "flag=true", "label=Hi there", "xs=[0.2, 0.3]"], d)
+    assert out == {"w": 12.5, "n": 3, "flag": True, "label": "Hi there", "xs": [0.2, 0.3]}
+    with pytest.raises(KeyError):
+        parse_overrides(["nope=1"], d)
+
+
+@pytest.mark.parametrize("model", sorted(p.name for p in MODELS.iterdir() if (p / "model.py").exists()))
+def test_every_model_builds_printable(model, tmp_path):
+    results = build_model(MODELS / model, out_dir=tmp_path, preview=False)
+    assert results
+    for r in results:
+        assert r.report.ok, r.report.to_text()
+        assert r.stl.stat().st_size > 0

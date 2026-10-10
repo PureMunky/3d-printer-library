@@ -15,6 +15,9 @@ bed contact) before it's committed — so what's in `models/` should print first
 | [parametric-box](models/parametric-box/) | Rounded box with press-in lid, dividers, engraved label | 2 |
 | [claude-buddy](models/claude-buddy/) | Pixel-art Claude mascot desk buddy with press-in eyes | 2 |
 | [todo-stencil](models/todo-stencil/) | Sticky-note stencil for checkboxes + writing lines | 1 |
+| [reading-guide](models/reading-guide/) | One-line reading windows (6/8/11 mm) for reading intervention | 3 |
+| [fraction-tiles](models/fraction-tiles/) | Fraction bars 1 to 1/12 with tray, raised labels | 10 |
+| [word-part-tiles](models/word-part-tiles/) | Interlocking prefix / base / suffix tiles for morphology | 3 |
 
 Each model folder has the STL(s), a `preview.png`, and a generated `PRINT.md`
 with material, temps, estimated time/filament and the printability report.

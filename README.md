@@ -18,7 +18,7 @@ bed contact) before it's committed — so what's in `models/` should print first
 | [reading-guide](models/reading-guide/) | One-line reading windows (6/8/11 mm) for reading intervention | 3 |
 | [fraction-tiles](models/fraction-tiles/) | Fraction bars 1 to 1/12 with tray, raised labels | 10 |
 | [word-part-tiles](models/word-part-tiles/) | Interlocking prefix / base / suffix tiles for morphology | 3 |
-| [doll-house-accessories](models/doll-house-accessories/) | 1:6 Barbie-scale home & kitchen accessories + gummy bears, one plate | 1 |
+| [doll-house-accessories](models/doll-house-accessories/) | 1:6 Barbie-scale home & kitchen accessories, plus gummy bears as their own file | 2 |
 
 Each model folder has the STL(s), a `preview.png`, and a generated `PRINT.md`
 with material, temps, estimated time/filament and the printability report.

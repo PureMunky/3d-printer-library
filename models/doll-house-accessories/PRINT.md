@@ -10,7 +10,7 @@ One plate of 1:6-scale kitchen and home accessories for Barbie-size dolls, plus 
 
 - Household set: 2 mugs, 2 plates, 2 bowls, frying pan, pot + lid, toaster, open laptop, phone, TV remote, 3 books, cutting board, spoon, spatula, wall clock, trash can.
 - Everything prints in one go, no supports. Use a brim only if your first layer is fussy — the parts are small.
-- Set split=true to get the household items and the gummy bears as separate files (e.g. to print the bears in translucent coloured PLA/PETG so they look like real gummies).
+- Household items and gummy bears are separate files: print the bears in translucent coloured PLA/PETG so they look like real gummies. Set split=false for one combined plate.
 - The gummy bears look edible but are plastic and small — keep them away from little kids.
 - Engraved details (phone screen, laptop keys, book pages) pop if you wipe on a little acrylic paint.
 
@@ -21,25 +21,44 @@ One plate of 1:6-scale kitchen and home accessories for Barbie-size dolls, plus 
 | `scale` | 6.0 |
 | `gummy_count` | 8 |
 | `gummy_height` | 10.0 |
-| `split` | False |
+| `split` | True |
 | `plate_width` | 250.0 |
 
-## `doll-house-accessories.stl`
+## `doll-house-accessories-household.stl`
 
-![preview](preview.png)
+![preview](preview-household.png)
 
 | Stat | Value |
 |---|---|
-| dimensions (mm) | 247.68 x 192.30 x 66.67 |
-| triangles | 309,086 |
-| volume (cm³) | 93.95 |
-| est. PLA (g) | 116.5 |
-| est. filament (m) | 39.06 |
-| est. print time | 2h 55m |
-| bed contact (mm²) | 18386 |
-| overhang area (mm²) | 1115 |
+| dimensions (mm) | 232.87 x 178.33 x 66.67 |
+| triangles | 39,166 |
+| volume (cm³) | 92.73 |
+| est. PLA (g) | 115.0 |
+| est. filament (m) | 38.55 |
+| est. print time | 2h 53m |
+| bed contact (mm²) | 18082 |
+| overhang area (mm²) | 1054 |
 
-- ℹ️ **multi-body** — 29 separate bodies — fine for a plate of parts; make sure each one touches the bed.
+- ℹ️ **multi-body** — 21 separate bodies — fine for a plate of parts; make sure each one touches the bed.
 - ℹ️ **fits** — Fits the Anycubic Kobra 2 Plus usable volume [310, 310, 390].
-- ℹ️ **minor-overhang** — 1105 mm² of tiny ledges/roofs (stair steps, small holes, lettering) — print fine unsupported.
+- ℹ️ **minor-overhang** — 1044 mm² of tiny ledges/roofs (stair steps, small holes, lettering) — print fine unsupported.
 - ℹ️ **bridge** — 2 bridge(s), longest 2.0 mm — OK with good cooling.
+
+## `doll-house-accessories-gummies.stl`
+
+![preview](preview-gummies.png)
+
+| Stat | Value |
+|---|---|
+| dimensions (mm) | 82.04 x 9.96 x 4.21 |
+| triangles | 56,192 |
+| volume (cm³) | 1.21 |
+| est. PLA (g) | 1.5 |
+| est. filament (m) | 0.50 |
+| est. print time | 4m |
+| bed contact (mm²) | 303 |
+| overhang area (mm²) | 58 |
+
+- ℹ️ **multi-body** — 8 separate bodies — fine for a plate of parts; make sure each one touches the bed.
+- ℹ️ **fits** — Fits the Anycubic Kobra 2 Plus usable volume [310, 310, 390].
+- ℹ️ **minor-overhang** — 58 mm² of tiny ledges/roofs (stair steps, small holes, lettering) — print fine unsupported.

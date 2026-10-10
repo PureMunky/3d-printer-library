@@ -42,8 +42,8 @@ META = {
         "Household set: 2 mugs, 2 plates, 2 bowls, frying pan, pot + lid, toaster, open laptop, phone, "
         "TV remote, 3 books, cutting board, spoon, spatula, wall clock, trash can.",
         "Everything prints in one go, no supports. Use a brim only if your first layer is fussy — the parts are small.",
-        "Set split=true to get the household items and the gummy bears as separate files (e.g. to print the bears in "
-        "translucent coloured PLA/PETG so they look like real gummies).",
+        "Household items and gummy bears are separate files: print the bears in translucent coloured PLA/PETG "
+        "so they look like real gummies. Set split=false for one combined plate.",
         "The gummy bears look edible but are plastic and small — keep them away from little kids.",
         "Engraved details (phone screen, laptop keys, book pages) pop if you wipe on a little acrylic paint.",
     ],
@@ -53,7 +53,7 @@ PARAMS = {
     "scale": 6.0,          # real size / scale; 6 ≈ Barbie (1:6)
     "gummy_count": 8,
     "gummy_height": 10.0,  # mm; ~real gummy-bear size. 6 is still printable.
-    "split": False,        # True: separate household + gummies STLs
+    "split": True,         # separate household + gummies STLs; False = one combined plate
     "plate_width": 250.0,
 }
 
@@ -272,7 +272,8 @@ def _bear_outline(height):
     ]
     cs = CrossSection.batch_boolean(parts, _add())
     k = height / 13.6  # outline is ~13.6 units tall
-    return offset(cs.scale((k, k)), 0.0)
+    # 0.02 mm tolerance: invisible at print scale, ~10x fewer triangles in the dome.
+    return cs.scale((k, k)).simplify(0.02)
 
 
 def gummy_bear(height):
@@ -285,7 +286,7 @@ def gummy_bear(height):
     for i in range(steps):  # quarter-circle profile, one slab per layer
         z0 = h - dome + i * dome / steps
         inset = dome * (1 - math.sqrt(max(0.0, 1 - ((i + 1) / steps) ** 2)))
-        layer = offset(cs, -inset)
+        layer = offset(cs, -inset).simplify(0.02)
         if not layer.is_empty():
             slabs.append(Manifold.extrude(layer, dome / steps + 0.01).translate((0, 0, z0)))
     return union(slabs)

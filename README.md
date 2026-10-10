@@ -37,7 +37,23 @@ python -m printlib check ~/Downloads/some-model.stl       # will it print?
 python -m printlib orient ~/Downloads/some-model.stl      # best orientation
 python -m printlib render models/calibration-cube/calibration-cube.stl
 python -m printlib new phone-stand                        # start a new model
+python -m printlib bundle reading-guide word-part-tiles:bases --name week1   # zip a print job
 ```
+
+## Printing a job
+
+`printlib bundle` rebuilds and re-checks the requested models, refuses to
+package anything that isn't printable, and writes `bundles/<name>.zip` with:
+
+- the STLs (at the top level, ready to open in the slicer)
+- `JOB.md`: file list, material, per-file and total time and filament, and a pre-print checklist
+- `previews/` and per-model `notes/` (full printability reports)
+
+Use `model:part` to pick single parts (`fraction-tiles:tiles-8`), and `--set`
+to customise a single model (`parametric-box --set label=GLUE`). Open the zip on
+a phone or computer, load the STLs into **Anycubic Slicer Next** or the
+Anycubic app, and send to the printer through your Anycubic account.
+`bundles/` is gitignored.
 
 ## Working with Claude
 

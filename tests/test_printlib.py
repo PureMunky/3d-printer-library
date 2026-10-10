@@ -174,3 +174,33 @@ def test_render_outlines_shallow_relief(tmp_path):
     # Edges of the 0.6 mm raised square sit near the image centre; they must be drawn dark.
     centre = px[320:405, 260:340]  # sheet header is 62 px; square is centred on (362, 300)
     assert (centre < 60).sum() > 40
+
+
+def test_bundle_zips_selected_parts_with_job_sheet(tmp_path):
+    import zipfile
+
+    from printlib.bundle import make_bundle
+
+    z = make_bundle(["tolerance-test:peg", "calibration-cube"], name="job", out_dir=tmp_path)
+    names = set(zipfile.ZipFile(z).namelist())
+    assert {"job/JOB.md", "job/tolerance-test-peg.stl", "job/calibration-cube.stl",
+            "job/previews/tolerance-test-peg.png", "job/notes/tolerance-test-PRINT.md"} <= names
+    assert "job/tolerance-test-plate.stl" not in names  # only the requested part
+    sheet = zipfile.ZipFile(z).read("job/JOB.md").decode()
+    assert "2 file(s)" in sheet and "Before each print" in sheet
+
+
+def test_bundle_rejects_unknown_part_and_multi_model_overrides(tmp_path):
+    from printlib.bundle import make_bundle
+
+    with pytest.raises(KeyError):
+        make_bundle(["tolerance-test:nope"], out_dir=tmp_path)
+    with pytest.raises(ValueError):
+        make_bundle(["tolerance-test", "calibration-cube"], overrides={"size": 10.0}, out_dir=tmp_path)
+
+
+def test_bundle_merges_parts_of_same_model():
+    from printlib.bundle import _group
+
+    g = _group(["tolerance-test:peg", "tolerance-test:plate", "calibration-cube", "calibration-cube:x"])
+    assert {k.name: v for k, v in g.items()} == {"tolerance-test": {"peg", "plate"}, "calibration-cube": None}

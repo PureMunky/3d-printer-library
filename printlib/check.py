@@ -38,6 +38,7 @@ class Report:
     name: str
     findings: list[Finding] = field(default_factory=list)
     stats: dict = field(default_factory=dict)
+    estimate: dict | None = None  # raw numbers from estimate.estimate(), when watertight
 
     def add(self, level: str, code: str, message: str) -> None:
         self.findings.append(Finding(level, code, message))
@@ -139,6 +140,7 @@ def check_mesh(
         from .estimate import estimate
 
         est = estimate(mesh, printer=p, material=material, infill=infill)
+        r.estimate = est
         r.stats["volume (cm³)"] = f"{mesh.volume / 1000:.2f}"
         r.stats[f"est. {material} (g)"] = f"{est['grams']:.1f}"
         r.stats["est. filament (m)"] = f"{est['meters']:.2f}"

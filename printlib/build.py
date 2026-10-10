@@ -80,7 +80,10 @@ def build_model(
     out_dir: str | Path | None = None,
     material: str | None = None,
     preview: bool = True,
+    only: set[str] | None = None,
 ) -> list[PartResult]:
+    """Build, export, check and preview a model. `only` limits output to those
+    part names (e.g. {"bases"}); unknown names raise KeyError."""
     model_dir = Path(model_dir)
     mod = load_model(model_dir)
     meta = getattr(mod, "META", {})
@@ -93,6 +96,11 @@ def build_model(
 
     result = mod.build(**params)
     parts = result if isinstance(result, dict) else {None: result}
+    if only:
+        missing = set(only) - {k for k in parts if k}
+        if missing:
+            raise KeyError(f"{slug} has no part(s) {sorted(missing)}; available: {sorted(k for k in parts if k)}")
+        parts = {k: v for k, v in parts.items() if k in only}
     results = []
     for part, solid in parts.items():
         if not isinstance(solid, Manifold):

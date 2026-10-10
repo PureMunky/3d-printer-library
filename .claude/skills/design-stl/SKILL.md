@@ -103,6 +103,8 @@ Then:
 - Add the model to the table in the top-level README.
 - Tell the user: STL path(s), print orientation, material, estimated time and
   grams (from PRINT.md), and anything to watch (supports, brim, fit to test).
+- When they want to print it, run `python -m printlib bundle <slug> --name <job>`
+  and send them `bundles/<job>.zip` (the zip is gitignored; don't commit it).
 
 ## Pitfalls
 

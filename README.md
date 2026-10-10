@@ -14,6 +14,7 @@ bed contact) before it's committed — so what's in `models/` should print first
 | [tolerance-test](models/tolerance-test/) | Peg + hole plate to calibrate press/snug/slide fits | 2 |
 | [parametric-box](models/parametric-box/) | Rounded box with press-in lid, dividers, engraved label | 2 |
 | [claude-buddy](models/claude-buddy/) | Pixel-art Claude mascot desk buddy with press-in eyes | 2 |
+| [todo-stencil](models/todo-stencil/) | Sticky-note stencil for checkboxes + writing lines | 1 |
 
 Each model folder has the STL(s), a `preview.png`, and a generated `PRINT.md`
 with material, temps, estimated time/filament and the printability report.

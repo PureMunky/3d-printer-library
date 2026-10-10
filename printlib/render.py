@@ -122,7 +122,7 @@ def render(
     lo, hi = mesh.bounds
     if highlight_overhangs:
         lim = math.sin(math.radians(float(p.design["max_overhang_deg"])))
-        oh = (normals[:, 2] < -lim) & (mesh.triangles_center[:, 2] > lo[2] + 0.05)
+        oh = (normals[:, 2] < -lim - 1e-6) & (mesh.triangles_center[:, 2] > lo[2] + 0.05)
         colors[oh] = RED
     ctr = (lo + hi) / 2
     half = max(float(np.linalg.norm(hi - lo)) / 2, 1.0)  # fits any view direction

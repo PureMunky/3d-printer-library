@@ -108,3 +108,19 @@ def test_every_model_builds_printable(model, tmp_path):
     for r in results:
         assert r.report.ok, r.report.to_text()
         assert r.stl.stat().st_size > 0
+
+
+def test_render_does_not_flag_exact_45_degree_chamfers(tmp_path):
+    from PIL import Image
+
+    from printlib.render import RED, render
+    from printlib.shapes import polygon
+    from manifold3d import Manifold
+
+    # A ledge whose underside is exactly 45° — printable, so it must not render red.
+    wedge = Manifold.extrude(polygon([(0, 0), (10, 0), (20, 10), (20, 20), (0, 20)]), 10).rotate((90, 0, 0))
+    out = render(on_bed(wedge), tmp_path / "w.png", views=("bottom",))
+    px = np.asarray(Image.open(out).convert("RGB")).reshape(-1, 3).astype(int)
+    red_like = (px[:, 0] > 150) & (px[:, 1] < 100) & (px[:, 2] < 100)
+    assert not red_like.any()
+    assert RED[0] > 150  # sanity: the check above would catch the overhang colour

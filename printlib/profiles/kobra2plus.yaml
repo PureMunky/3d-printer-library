@@ -1,0 +1,83 @@
+# Anycubic Kobra 2 Plus — printer + design-rule profile.
+# All lengths in millimetres, temperatures in °C, speeds in mm/s.
+# "spec" values come from the manufacturer; "design" values are conservative
+# rules of thumb for FDM with a 0.4 mm nozzle. Tune them after running the
+# calibration models in models/ (tolerance-test especially).
+
+name: Anycubic Kobra 2 Plus
+
+spec:
+  build_volume: [320, 320, 400]     # X, Y, Z
+  nozzle_diameter: 0.4
+  filament_diameter: 1.75
+  extruder: direct drive
+  max_nozzle_temp: 260
+  max_bed_temp: 110
+  max_print_speed: 500
+  typical_print_speed: 300
+  bed_surface: PEI-coated spring steel (magnetic, flexible)
+  leveling: LeviQ 2.0 automatic
+  enclosure: false
+
+# Usable volume after leaving room for the purge line, bed clips and skirt/brim.
+# Validate against this, not the raw build volume.
+usable_volume: [310, 310, 390]
+
+design:
+  line_width: 0.45            # typical extrusion width for a 0.4 nozzle
+  layer_height: 0.2           # default; 0.12 fine / 0.28 draft
+  min_wall: 0.9               # 2 perimeters; anything thinner may vanish in the slicer
+  recommended_wall: 1.6       # ~4 perimeters at 0.4 line width; good strength
+  min_feature: 0.8            # smallest printable pin/rib/text stroke
+  min_hole: 1.5               # smaller holes close up; drill instead
+  max_overhang_deg: 45        # measured from vertical; beyond this needs support
+  max_bridge: 15              # mm of unsupported horizontal span (PLA, good cooling)
+  first_layer_chamfer: 0.4    # bottom-edge chamfer to hide elephant's foot
+  min_bed_contact_ratio: 0.15 # contact width / height below which a brim is advised
+  emboss_height: 0.6          # 3 layers @ 0.2 for raised/engraved text
+  hole_compensation: 0.15     # extra radius added to vertical holes (they print small)
+
+# Clearance *per side* (radial for round parts) between mating parts.
+tolerances:
+  press: 0.10        # interference-ish; needs force, may need sanding
+  snug: 0.15         # friction fit that holds without glue
+  slide: 0.25        # moves freely by hand (lids, drawers)
+  loose: 0.40        # rattles; for easy assembly
+  print_in_place: 0.45  # gap between moving parts printed already assembled
+
+materials:
+  PLA:
+    density: 1.24
+    nozzle: 210
+    bed: 60
+    fan: 100
+    speed: 200
+    notes: Default choice. Easiest, stiff, softens around 55 °C (no car dashboards).
+  PETG:
+    density: 1.27
+    nozzle: 240
+    bed: 80
+    fan: 40
+    speed: 150
+    notes: Tougher and more heat-resistant than PLA; strings; use glue stick or a release agent on PEI.
+  TPU:
+    density: 1.21
+    nozzle: 225
+    bed: 50
+    fan: 60
+    speed: 30
+    notes: Flexible (95A). Direct drive handles it; print slowly, retraction short (~0.5 mm).
+  ABS:
+    density: 1.04
+    nozzle: 250
+    bed: 100
+    fan: 0
+    speed: 150
+    notes: Open frame — warps on large parts; use draft shield/brim and avoid drafts. Ventilate.
+  ASA:
+    density: 1.07
+    nozzle: 255
+    bed: 100
+    fan: 10
+    speed: 150
+    notes: UV-stable outdoor ABS alternative; same warping caveats.

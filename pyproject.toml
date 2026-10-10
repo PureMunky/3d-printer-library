@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "printlib"
+version = "0.1.0"
+description = "Parametric model + STL tooling tuned for the Anycubic Kobra 2 Plus"
+requires-python = ">=3.10"
+dependencies = [
+  "manifold3d>=3.0",
+  "trimesh>=4.0",
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "matplotlib>=3.8",
+  "shapely>=2.0",
+  "networkx>=3.0",
+  "PyYAML>=6.0",
+]
+
+[project.scripts]
+printlib = "printlib.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["printlib*"]
+
+[tool.setuptools.package-data]
+printlib = ["profiles/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

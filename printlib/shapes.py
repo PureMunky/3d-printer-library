@@ -79,6 +79,30 @@ def arrange(parts: Sequence[Manifold], gap: float = 5.0) -> Manifold:
     return on_bed(union(placed))
 
 
+def pack(parts: Sequence[Manifold], width: float = 300.0, gap: float = 4.0) -> Manifold:
+    """Shelf-pack parts into rows no wider than `width` (one multi-part plate).
+
+    Parts keep their order; tallest-first input packs tighter. Raises if the
+    result won't fit the printer's usable bed.
+    """
+    placed, x, y, row_h = [], 0.0, 0.0, 0.0
+    for p in parts:
+        p = on_bed(p, center=False)
+        lo, hi = bounds(p)
+        w, h = hi[0] - lo[0], hi[1] - lo[1]
+        if x > 0 and x + w > width:
+            x, y, row_h = 0.0, y - row_h - gap, 0.0
+        placed.append(p.translate((x - lo[0], y - hi[1], 0)))
+        x += w + gap
+        row_h = max(row_h, h)
+    plate = on_bed(union(placed))
+    ext = size(plate)
+    ux, uy, _ = _P.usable_volume
+    if ext[0] > ux or ext[1] > uy:
+        raise ValueError(f"packed plate {ext[0]:.0f} x {ext[1]:.0f} mm exceeds usable bed {ux} x {uy}")
+    return plate
+
+
 # --------------------------------------------------------------------------- #
 # 2D profiles
 # --------------------------------------------------------------------------- #
@@ -152,6 +176,7 @@ def extrude(cs: CrossSection, h: float, bottom_chamfer: float = 0.0, top_chamfer
     Use bottom_chamfer = design.first_layer_chamfer (0.4) on parts whose
     bottom edge must stay crisp/flush — it hides elephant's foot.
     """
+    cs = cs.simplify(1e-4)  # 2D booleans can also leave ~1e-8 mm vertex pairs
     body_lo, body_hi = bottom_chamfer, h - top_chamfer
     parts = [extrude_plain(cs, body_hi - body_lo).translate((0, 0, body_lo))]
     for c, z0, direction in ((bottom_chamfer, 0.0, 1), (top_chamfer, body_hi, -1)):

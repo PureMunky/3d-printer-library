@@ -115,6 +115,11 @@ Then:
 - **Never let booleans meet tangentially or flush** (a circle touching a
   box face, cutters ending exactly on a face). Sink joined shapes ~0.3 mm into
   each other and overshoot cutters.
+- **Same for 3D joins:** a rounded part end grazing a curved wall (handle
+  meeting a pan) leaves micro-edges. Run the joined part well into the body
+  and cut hollows *after* the union.
+- **Many small parts on one plate:** `shapes.pack(parts, width)` shelf-packs
+  them and refuses plates that don't fit the bed.
 - **Raised text strokes must clear `min_wall`:** small labels (< ~7 mm) need
   `offset(label, 0.15–0.2)` or the thin-wall check (rightly) warns.
 - `build` checks the STL **as written to disk**, the way a slicer reads it. If it

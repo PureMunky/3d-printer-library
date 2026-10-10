@@ -18,7 +18,7 @@ Each category is its own STL so they can be printed in three colours
 from manifold3d import CrossSection, Manifold
 
 from printlib.profile import load_printer
-from printlib.shapes import box, extrude, offset, on_bed, rect, text2d, union
+from printlib.shapes import box, extrude, offset, on_bed, pack, rect, text2d
 
 P = load_printer()
 
@@ -57,9 +57,9 @@ PARAMS = {
 def build(prefixes, bases, suffixes, text_size, tile_h, tile_t, text_raise, knob_d, knob_reach, fit, plate_width):
     kw = dict(size=text_size, h=tile_h, t=tile_t, raise_=text_raise, d=knob_d, reach=knob_reach, gap=P.tol(fit))
     return {
-        "prefixes": _plate([_tile(w, socket=False, knob=True, **kw) for w in prefixes], plate_width),
-        "bases": _plate([_tile(w, socket=True, knob=True, **kw) for w in bases], plate_width),
-        "suffixes": _plate([_tile(w, socket=True, knob=False, **kw) for w in suffixes], plate_width),
+        "prefixes": pack([_tile(w, socket=False, knob=True, **kw) for w in prefixes], plate_width),
+        "bases": pack([_tile(w, socket=True, knob=True, **kw) for w in bases], plate_width),
+        "suffixes": pack([_tile(w, socket=True, knob=False, **kw) for w in suffixes], plate_width),
     }
 
 
@@ -96,18 +96,3 @@ def _tile(word, socket, knob, size, h, t, raise_, d, reach, gap):
     cx = (left + (reach if socket else 0) + right) / 2
     tile = tile + Manifold.extrude(offset(label, 0.15), raise_).translate((cx, 0, t))
     return on_bed(tile, center=False)
-
-
-def _plate(tiles, width, gap=4.0):
-    """Wrap tiles into rows that fit `width`, starting at the bed origin."""
-    placed, x, y, row_h = [], 0.0, 0.0, 0.0
-    for t in tiles:
-        b = t.bounding_box()
-        w, h = b[3] - b[0], b[4] - b[1]
-        if x > 0 and x + w > width:
-            x, y, row_h = 0.0, y - row_h - gap, 0.0
-        placed.append(t.translate((x - b[0], y - b[4], 0)))
-        x += w + gap
-        row_h = max(row_h, h)
-    return on_bed(union(placed))
-

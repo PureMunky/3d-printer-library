@@ -204,3 +204,27 @@ def test_bundle_merges_parts_of_same_model():
 
     g = _group(["tolerance-test:peg", "tolerance-test:plate", "calibration-cube", "calibration-cube:x"])
     assert {k.name: v for k, v in g.items()} == {"tolerance-test": {"peg", "plate"}, "calibration-cube": None}
+
+
+def test_pack_wraps_rows_and_rejects_oversize():
+    from printlib.shapes import pack
+
+    plate = pack([box(40, 10, 2)] * 6, width=100, gap=5)  # 2 per row -> 3 rows
+    ext = to_trimesh(plate).extents
+    assert ext[0] == pytest.approx(85, abs=0.01) and ext[1] == pytest.approx(40, abs=0.01)
+    with pytest.raises(ValueError):
+        pack([box(200, 200, 2)] * 2, width=400)
+
+
+def test_extrude_drops_micro_edges_from_2d_booleans(tmp_path):
+    from printlib.meshio import export_stl, load_mesh
+    from printlib.shapes import extrude, rect
+
+    # Exact doll-house spatula profile: blade minus rounded slots plus shaft left
+    # ~1e-8 mm vertex pairs that tore the exported STL before extrude() simplified.
+    L = 280 / 6
+    blade = rect(11, 10, r=1.2).translate((L / 2 - 5.5, 0))
+    for y in (-2.6, 0, 2.6):
+        blade = blade - rect(6.5, 1.1, r=0.5).translate((L / 2 - 5, y))
+    solid = extrude(blade + rect(L - 10, 2.4, r=1.0).translate((-5, 0)), 1.2, bottom_chamfer=0.2)
+    assert load_mesh(export_stl(solid, tmp_path / "s.stl")).is_watertight

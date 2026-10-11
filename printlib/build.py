@@ -124,6 +124,15 @@ def build_model(
     return results
 
 
+def color_change_note(z: float) -> str:
+    """Slicer instruction for a two-colour print of a single-colour relief."""
+    layer = load_printer().design["layer_height"]
+    n = round(z / layer) + 1
+    return (f"**Optional colour change:** at Z = {z:g} mm (start of layer {n} at {layer} mm layers) — "
+            "base colour below, raised details in the second colour. In Anycubic Slicer Next / OrcaSlicer: "
+            "slice, drag the layer slider to that layer, right-click > Add colour change.")
+
+
 def write_print_notes(out_dir: Path, slug: str, meta: dict, params: dict, material: str, infill: float, results: list[PartResult]) -> Path:
     p = load_printer()
     mat = p.material(material)
@@ -138,6 +147,8 @@ def write_print_notes(out_dir: Path, slug: str, meta: dict, params: dict, materi
     ]
     if meta.get("description"):
         lines += [meta["description"], ""]
+    if meta.get("color_change_z") is not None:
+        lines += [color_change_note(float(meta["color_change_z"])), ""]
     if meta.get("notes"):
         lines += ["## Notes", ""] + [f"- {n}" for n in meta["notes"]] + [""]
     lines += ["## Parameters used", "", "| Param | Value |", "|---|---|"]

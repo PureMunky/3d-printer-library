@@ -228,3 +228,33 @@ def test_extrude_drops_micro_edges_from_2d_booleans(tmp_path):
         blade = blade - rect(6.5, 1.1, r=0.5).translate((L / 2 - 5, y))
     solid = extrude(blade + rect(L - 10, 2.4, r=1.0).translate((-5, 0)), 1.2, bottom_chamfer=0.2)
     assert load_mesh(export_stl(solid, tmp_path / "s.stl")).is_watertight
+
+
+def test_color_change_note_in_print_notes(tmp_path):
+    from printlib.build import color_change_note, write_print_notes
+
+    note = color_change_note(1.6)
+    assert "Z = 1.6 mm" in note and "layer 9" in note
+    path = write_print_notes(tmp_path, "x", {"color_change_z": 1.6}, {}, "PLA", 0.15, [])
+    assert "Optional colour change" in path.read_text()
+
+
+def test_stroke_text_has_uniform_printable_strokes_and_gaps():
+    from manifold3d import JoinType
+
+    from printlib.shapes import stroke_text
+
+    w = 0.9
+    t = stroke_text("BOÖTES 8 AB", cap=4.4, width=1.0, gap=1.05)
+    assert t.area() > 0
+    # Accents are folded rather than dropped: BOÖTES keeps its letter.
+    assert stroke_text("BOÖTES").bounds()[2] - stroke_text("BOÖTES").bounds()[0] == pytest.approx(
+        stroke_text("BOOTES").bounds()[2] - stroke_text("BOOTES").bounds()[0], abs=1e-6)
+
+    def morph(a, d1, d2):
+        return a.offset(d1, JoinType.Round, circular_segments=24).offset(d2, JoinType.Round, circular_segments=24)
+
+    thin = (t - morph(t, -w / 2 + 0.01, w / 2 - 0.01)).offset(-0.1, JoinType.Round, circular_segments=24).area()
+    gaps = (morph(t, w / 2 - 0.01, -w / 2 + 0.01) - t).offset(-0.1, JoinType.Round, circular_segments=24).area()
+    assert thin == pytest.approx(0, abs=0.05)
+    assert gaps < 0.03 * t.area()  # only the acute vertices of V/W/A shapes

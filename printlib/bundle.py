@@ -114,6 +114,13 @@ def _job_sheet(name: str, rows, notes: dict, material: str | None) -> str:
             f"| {i} | `{r.stl.name}` | {mat} | {'yes' if meta.get('supports') else 'no'} | "
             f"{_fmt_time(est.get('seconds', 0))} | {est.get('grams', 0):.0f} g |"
         )
+    from .build import color_change_note
+
+    seen = set()
+    for slug, _, meta in rows:
+        if meta.get("color_change_z") is not None and slug not in seen:
+            seen.add(slug)
+            lines += ["", f"{slug}: " + color_change_note(float(meta["color_change_z"]))]
     lines += [
         "",
         "## Send it to the printer",

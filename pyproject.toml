@@ -16,6 +16,7 @@ dependencies = [
   "shapely>=2.0",
   "networkx>=3.0",
   "PyYAML>=6.0",
+  "Hershey-Fonts>=2.1",
 ]
 
 [project.scripts]

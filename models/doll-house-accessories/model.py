@@ -42,8 +42,9 @@ META = {
         "Household set: 2 mugs, 2 plates, 2 bowls, frying pan, pot + lid, toaster, open laptop, phone, "
         "TV remote, 3 books, cutting board, spoon, spatula, wall clock, trash can.",
         "Everything prints in one go, no supports. Use a brim only if your first layer is fussy — the parts are small.",
-        "Household items and gummy bears are separate files: print the bears in translucent coloured PLA/PETG "
-        "so they look like real gummies. Set split=false for one combined plate.",
+        "The gummy bear is its own single-bear file: add it to the slicer plate as many times as you want "
+        "(right-click > Add instance / Clone), ideally in translucent coloured PLA/PETG. "
+        "Set split=false for one combined plate with gummy_count bears.",
         "The gummy bears look edible but are plastic and small — keep them away from little kids.",
         "Engraved details (phone screen, laptop keys, book pages) pop if you wipe on a little acrylic paint.",
     ],
@@ -51,9 +52,9 @@ META = {
 
 PARAMS = {
     "scale": 6.0,          # real size / scale; 6 ≈ Barbie (1:6)
-    "gummy_count": 8,
+    "gummy_count": 8,      # bears on the combined plate (split=false only)
     "gummy_height": 10.0,  # mm; ~real gummy-bear size. 6 is still printable.
-    "split": True,         # separate household + gummies STLs; False = one combined plate
+    "split": True,         # household plate + ONE gummy bear STL; False = one combined plate
     "plate_width": 250.0,
 }
 
@@ -301,10 +302,10 @@ def build(scale, gummy_count, gummy_height, split, plate_width):
         book(s), book(s, 220, 150, 25), book(s, 200, 135, 20),
         bowl(s), bowl(s), mug(s), mug(s), tv_remote(s), phone(s), spatula(s), spoon(s),
     ]
-    gummies = [gummy_bear(gummy_height) for _ in range(gummy_count)]
     if split:
-        return {"household": pack(household, plate_width), "gummies": pack(gummies, plate_width)}
-    return pack(household + gummies, plate_width)
+        # One bear per file: duplicate it in the slicer for as many as you want.
+        return {"household": pack(household, plate_width), "gummy-bear": gummy_bear(gummy_height)}
+    return pack(household + [gummy_bear(gummy_height) for _ in range(gummy_count)], plate_width)
 
 
 

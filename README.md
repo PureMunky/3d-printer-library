@@ -18,7 +18,7 @@ bed contact) before it's committed — so what's in `models/` should print first
 | [reading-guide](models/reading-guide/) | One-line reading windows (6/8/11 mm) for reading intervention | 3 |
 | [fraction-tiles](models/fraction-tiles/) | Fraction bars 1 to 1/12 with tray, raised labels | 10 |
 | [word-part-tiles](models/word-part-tiles/) | Interlocking prefix / base / suffix tiles for morphology | 3 |
-| [doll-house-accessories](models/doll-house-accessories/) | 1:6 Barbie-scale home & kitchen accessories, plus gummy bears as their own file | 2 |
+| [doll-house-accessories](models/doll-house-accessories/) | 1:6 Barbie-scale home & kitchen accessories, plus a single gummy-bear STL to duplicate | 2 |
 | [planisphere](models/planisphere/) | Two-disc star wheel for Pataskala, OH, with the window cut to the measured horizon; verified against astropy | 3 |
 
 Each model folder has the STL(s), a `preview.png`, and a generated `PRINT.md`

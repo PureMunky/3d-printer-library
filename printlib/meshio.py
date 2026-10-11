@@ -12,7 +12,7 @@ from manifold3d import Manifold, Mesh
 def to_trimesh(solid: Manifold | trimesh.Trimesh) -> trimesh.Trimesh:
     if isinstance(solid, trimesh.Trimesh):
         return solid
-    mesh = solid.to_mesh()
+    mesh = solid.to_mesh64()  # float32 can merge distinct nearby vertices
     verts = np.asarray(mesh.vert_properties, dtype=np.float64)[:, :3]
     faces = np.asarray(mesh.tri_verts, dtype=np.int64)
     return trimesh.Trimesh(vertices=verts, faces=faces, process=True)

@@ -103,8 +103,27 @@ Then:
 - Add the model to the table in the top-level README.
 - Tell the user: STL path(s), print orientation, material, estimated time and
   grams (from PRINT.md), and anything to watch (supports, brim, fit to test).
+- When they want to print it, run `python -m printlib bundle <slug> --name <job>`
+  and send them `bundles/<job>.zip` (the zip is gitignored; don't commit it).
 
 ## Pitfalls
+
+- **Use `shapes.offset(cs, d)`, never `cs.offset(...)`.** Raw Clipper offsets
+  can leave vertices ~1e-8 mm apart that become zero-length edges and tear
+  the exported STL (the check reports `not-watertight` / hundreds of
+  `floating-body`).
+- **Never let booleans meet tangentially or flush** (a circle touching a
+  box face, cutters ending exactly on a face). Sink joined shapes ~0.3 mm into
+  each other and overshoot cutters.
+- **Same for 3D joins:** a rounded part end grazing a curved wall (handle
+  meeting a pan) leaves micro-edges. Run the joined part well into the body
+  and cut hollows *after* the union.
+- **Many small parts on one plate:** `shapes.pack(parts, width)` shelf-packs
+  them and refuses plates that don't fit the bed.
+- **Raised text strokes must clear `min_wall`:** small labels (< ~7 mm) need
+  `offset(label, 0.15–0.2)` or the thin-wall check (rightly) warns.
+- `build` checks the STL **as written to disk**, the way a slicer reads it. If it
+  fails there but the in-memory solid looks fine, look for micro-edges.
 
 - `Manifold.cylinder` / `extrude` start at z=0; `teardrop` and cutters are
   centred/overshoot — always `on_bed()` the final part (build does this too).

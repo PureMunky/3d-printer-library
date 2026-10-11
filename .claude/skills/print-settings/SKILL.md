@@ -18,6 +18,14 @@ sheet, LeviQ 2.0 auto-levelling, open frame (no enclosure), up to ~500 mm/s
 (≈300 mm/s is a sane fast default). Use the slicer's bundled "Anycubic Kobra 2
 Plus" printer profile as the base and adjust from there.
 
+## Getting a job to the printer
+
+The printer is set up for remote printing through the user's **Anycubic
+account**. This cloud session can't reach it, and there's no official API.
+Hand off with `python -m printlib bundle <models...> --name <job>` and send the
+zip; they open the STLs in Anycubic Slicer Next or the app, slice with the
+stock Kobra 2 Plus profile plus the settings below, and send from there.
+
 ## Baseline profiles (0.4 nozzle)
 
 | Purpose | Layer | Walls | Top/Bottom | Infill | Notes |

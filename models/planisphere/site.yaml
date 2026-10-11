@@ -1,0 +1,45 @@
+# Planisphere site file. Edit, then rebuild:
+#   python -m printlib build planisphere
+#   python -m pytest -q tests/test_planisphere.py
+
+site:
+  name: Pataskala, OH
+  latitude_deg: 39.9956      # north positive (town centre)
+  longitude_deg: -82.6743    # east positive, so west is negative
+  timezone: America/New_York # standard-time offset and central meridian come from this
+
+horizon:
+  # Compass readings are MAGNETIC. True azimuth = magnetic azimuth + declination.
+  # WMM-2025 at the site for epoch 2026.8 (negative = west). Recompute with:
+  #   python -c "import pygeomag; print(pygeomag.GeoMag().calculate(glat=LAT, glon=LON, alt=0, time=YEAR).d)"
+  magnetic_declination_deg: -7.46
+
+  # Obstruction altitude above level ground (degrees) at each MAGNETIC azimuth
+  # (0 = magnetic north, 90 = east), measured from the viewing spot.
+  # Interpolated smoothly (monotone cubic, no overshoot), wrapping at 360.
+  # FLAT horizon for now (0 deg everywhere) — replace with your measurements.
+  altitude_by_azimuth:
+    0: 0
+    15: 0
+    30: 0
+    45: 0
+    60: 0
+    75: 0
+    90: 0
+    105: 0
+    120: 0
+    135: 0
+    150: 0
+    165: 0
+    180: 0
+    195: 0
+    210: 0
+    225: 0
+    240: 0
+    255: 0
+    270: 0
+    285: 0
+    300: 0
+    315: 0
+    330: 0
+    345: 0

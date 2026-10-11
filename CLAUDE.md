@@ -29,6 +29,7 @@ python -m printlib build <slug> [--set k=v] [--out dir]
 python -m printlib check file.stl        # printability report
 python -m printlib render file.stl       # PNG preview
 python -m printlib orient file.stl       # best print orientation
+python -m printlib bundle <slug>[:part] ... --name job   # zip for printing → bundles/
 python -m pytest -q
 ```
 
@@ -40,4 +41,7 @@ python -m pytest -q
 - Generated files (`*.stl`, `preview*.png`, `PRINT.md`) are committed but
   never hand-edited — change `model.py` and rebuild.
 - Scratch variants go in `scratch/` (gitignored) via `--out`.
+- Printing hand-off: the printer is on Anycubic Cloud, which this cloud session
+  can't reach (and has no official API). Deliver jobs with `printlib bundle`
+  and send the zip to the user; they slice/send in Anycubic Slicer Next or the app.
 - Run `python -m pytest -q` before committing; add a test when changing `printlib`.

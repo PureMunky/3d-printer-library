@@ -79,6 +79,30 @@ def arrange(parts: Sequence[Manifold], gap: float = 5.0) -> Manifold:
     return on_bed(union(placed))
 
 
+def pack(parts: Sequence[Manifold], width: float = 300.0, gap: float = 4.0) -> Manifold:
+    """Shelf-pack parts into rows no wider than `width` (one multi-part plate).
+
+    Parts keep their order; tallest-first input packs tighter. Raises if the
+    result won't fit the printer's usable bed.
+    """
+    placed, x, y, row_h = [], 0.0, 0.0, 0.0
+    for p in parts:
+        p = on_bed(p, center=False)
+        lo, hi = bounds(p)
+        w, h = hi[0] - lo[0], hi[1] - lo[1]
+        if x > 0 and x + w > width:
+            x, y, row_h = 0.0, y - row_h - gap, 0.0
+        placed.append(p.translate((x - lo[0], y - hi[1], 0)))
+        x += w + gap
+        row_h = max(row_h, h)
+    plate = on_bed(union(placed))
+    ext = size(plate)
+    ux, uy, _ = _P.usable_volume
+    if ext[0] > ux or ext[1] > uy:
+        raise ValueError(f"packed plate {ext[0]:.0f} x {ext[1]:.0f} mm exceeds usable bed {ux} x {uy}")
+    return plate
+
+
 # --------------------------------------------------------------------------- #
 # 2D profiles
 # --------------------------------------------------------------------------- #
@@ -87,11 +111,18 @@ def rect(x: float, y: float, r: float = 0.0) -> CrossSection:
     if r <= 0:
         return CrossSection.square((x, y), center=True)
     r = min(r, x / 2 - 1e-3, y / 2 - 1e-3)
-    return CrossSection.square((x - 2 * r, y - 2 * r), center=True).offset(r, JoinType.Round)
+    return offset(CrossSection.square((x - 2 * r, y - 2 * r), center=True), r)
 
 
 def circle(d: float) -> CrossSection:
     return CrossSection.circle(d / 2)
+
+
+def offset(cs: CrossSection, delta: float, join: JoinType = JoinType.Round) -> CrossSection:
+    """Grow (+) or shrink (-) a profile. Always use this instead of
+    ``cs.offset``: Clipper can leave vertices ~1e-8 mm apart where arcs meet
+    lines, which become zero-length edges that tear the exported STL."""
+    return cs.offset(delta, join).simplify(1e-4)
 
 
 def polygon(points: Sequence[Sequence[float]]) -> CrossSection:
@@ -134,6 +165,87 @@ def text2d(
     return cs.translate((dx, dy))
 
 
+def stroke(points: Sequence[Sequence[float]], width: float, segments: int = 16) -> CrossSection:
+    """Open polyline -> filled stroke of uniform `width` with round caps/joins.
+
+    `segments` sides per round cap: ~10 is plenty for 1 mm strokes (keeps big
+    lettered parts' STLs small); raise it for wide strokes."""
+    pts = np.asarray(points, dtype=float)
+    parts = [CrossSection.circle(width / 2, segments).translate(tuple(pts[0]))]
+    for (x0, y0), (x1, y1) in zip(pts[:-1], pts[1:]):
+        length = math.hypot(x1 - x0, y1 - y0)
+        if length < 1e-9:
+            continue
+        seg = CrossSection.square((length, width)).translate((0, -width / 2))
+        parts.append(seg.rotate(math.degrees(math.atan2(y1 - y0, x1 - x0))).translate((x0, y0)))
+        parts.append(CrossSection.circle(width / 2, segments).translate((x1, y1)))
+    return CrossSection.batch_boolean(parts, _op("Add"))
+
+
+_HERSHEY = {}
+
+
+def _hershey(font: str):
+    if font not in _HERSHEY:
+        from HersheyFonts import HersheyFonts
+
+        f = HersheyFonts()
+        f.load_default_font(font)
+        f.normalize_rendering(100.0)
+        ys = [y for seg in f.lines_for_text("H") for _, y in seg]
+        _HERSHEY[font] = (f, max(ys) - min(ys))  # font object, cap height in font units
+    return _HERSHEY[font]
+
+
+def stroke_text(
+    s: str,
+    cap: float = 4.4,
+    width: float | None = None,
+    gap: float | None = None,
+    font: str = "futural",
+    segments: int = 12,
+    halign: str = "center",
+    valign: str = "center",
+) -> CrossSection:
+    """Single-stroke (Hershey) text with a uniform stroke and controlled spacing.
+
+    Use instead of text2d() wherever strokes and gaps must clear a printable
+    minimum (raised or engraved small text): every stroke is exactly `width`
+    (default: the profile's min_wall) and glyphs are spaced so the ink gap
+    between letters is `gap` (default: the same). Keep `cap` >= ~4.5 x width
+    so the gaps inside letters like B/E/8 clear it too.
+    """
+    import unicodedata
+
+    # Hershey fonts are ASCII: fold accents (BOÖTES -> BOOTES) rather than drop letters.
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
+    w = width if width is not None else float(_P.design["min_wall"])
+    g = gap if gap is not None else w
+    f, cap_units = _hershey(font)
+    k = cap / cap_units
+    parts, x = [], 0.0
+    for ch in s:
+        if ch == " ":
+            x += 0.55 * cap
+            continue
+        segs = [((a[0] * k, a[1] * k), (b[0] * k, b[1] * k)) for a, b in f.lines_for_text(ch)]
+        if not segs:
+            x += 0.55 * cap
+            continue
+        xs = [p[0] for seg in segs for p in seg]
+        x0 = min(xs)
+        for a, b in segs:
+            parts.append(stroke([(a[0] - x0 + x, a[1]), (b[0] - x0 + x, b[1])], w, segments))
+        x += (max(xs) - x0) + w + g
+    if not parts:
+        return CrossSection()
+    cs = CrossSection.batch_boolean(parts, _op("Add")).simplify(1e-4)
+    bx0, by0, bx1, by1 = cs.bounds()
+    dx = {"left": -bx0, "center": -(bx0 + bx1) / 2, "right": -bx1}[halign]
+    dy = {"bottom": -by0, "center": -(by0 + by1) / 2, "top": -by1}[valign]
+    return cs.translate((dx, dy))
+
+
 # --------------------------------------------------------------------------- #
 # 3D primitives (on the bed, centred on X/Y)
 # --------------------------------------------------------------------------- #
@@ -145,6 +257,7 @@ def extrude(cs: CrossSection, h: float, bottom_chamfer: float = 0.0, top_chamfer
     Use bottom_chamfer = design.first_layer_chamfer (0.4) on parts whose
     bottom edge must stay crisp/flush — it hides elephant's foot.
     """
+    cs = cs.simplify(1e-4)  # 2D booleans can also leave ~1e-8 mm vertex pairs
     body_lo, body_hi = bottom_chamfer, h - top_chamfer
     parts = [extrude_plain(cs, body_hi - body_lo).translate((0, 0, body_lo))]
     for c, z0, direction in ((bottom_chamfer, 0.0, 1), (top_chamfer, body_hi, -1)):
@@ -156,7 +269,7 @@ def extrude(cs: CrossSection, h: float, bottom_chamfer: float = 0.0, top_chamfer
             # bottom: inset shrinks as we go up; top: inset grows as we go up
             frac = (steps - i) / steps if direction == 1 else (i + 1) / steps
             inset = c * frac
-            layer = cs.offset(-inset, JoinType.Round)
+            layer = offset(cs, -inset)
             if layer.is_empty():
                 continue
             parts.append(extrude_plain(layer, dz).translate((0, 0, z0 + i * dz)))

@@ -101,6 +101,23 @@ def cmd_orient(a) -> int:
     return 0
 
 
+def cmd_bundle(a) -> int:
+    from .build import load_model, parse_overrides
+    from .bundle import make_bundle, parse_target
+
+    overrides = {}
+    if a.set:
+        model_dir, _ = parse_target(a.targets[0])
+        overrides = parse_overrides(a.set, getattr(load_model(model_dir), "PARAMS", {}))
+    try:
+        path = make_bundle(a.targets, name=a.name, overrides=overrides, material=a.material, out_dir=a.out)
+    except (RuntimeError, KeyError, ValueError, FileNotFoundError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    print(f"wrote {path}")
+    return 0
+
+
 def cmd_new(a) -> int:
     d = MODELS_DIR / a.slug
     if d.exists():
@@ -166,6 +183,14 @@ def main(argv: list[str] | None = None) -> int:
     o.add_argument("--out")
     o.add_argument("--place-only", action="store_true")
     o.set_defaults(fn=cmd_orient)
+
+    bu = sub.add_parser("bundle", help="zip freshly built STLs + previews + job sheet for printing")
+    bu.add_argument("targets", nargs="+", help="model slugs, optionally slug:part (e.g. word-part-tiles:bases)")
+    bu.add_argument("--name", help="bundle name (default: from targets)")
+    bu.add_argument("--set", action="append", default=[], metavar="KEY=VALUE", help="override a PARAM (single model only)")
+    bu.add_argument("--material")
+    bu.add_argument("--out", help="output dir (default: bundles/)")
+    bu.set_defaults(fn=cmd_bundle)
 
     n = sub.add_parser("new", help="scaffold models/<slug>/")
     n.add_argument("slug")

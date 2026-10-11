@@ -28,7 +28,7 @@ from types import ModuleType
 from manifold3d import Manifold
 
 from .check import Report, check_mesh
-from .meshio import export_stl, to_trimesh
+from .meshio import export_stl, load_mesh, to_trimesh
 from .profile import load_printer
 from .render import render
 from .shapes import on_bed
@@ -80,7 +80,10 @@ def build_model(
     out_dir: str | Path | None = None,
     material: str | None = None,
     preview: bool = True,
+    only: set[str] | None = None,
 ) -> list[PartResult]:
+    """Build, export, check and preview a model. `only` limits output to those
+    part names (e.g. {"bases"}); unknown names raise KeyError."""
     model_dir = Path(model_dir)
     mod = load_model(model_dir)
     meta = getattr(mod, "META", {})
@@ -93,6 +96,11 @@ def build_model(
 
     result = mod.build(**params)
     parts = result if isinstance(result, dict) else {None: result}
+    if only:
+        missing = set(only) - {k for k in parts if k}
+        if missing:
+            raise KeyError(f"{slug} has no part(s) {sorted(missing)}; available: {sorted(k for k in parts if k)}")
+        parts = {k: v for k, v in parts.items() if k in only}
     results = []
     for part, solid in parts.items():
         if not isinstance(solid, Manifold):
@@ -103,6 +111,9 @@ def build_model(
         name = f"{slug}-{part}" if part else slug
         mesh = to_trimesh(solid)
         stl = export_stl(mesh, out_dir / f"{name}.stl")
+        # Check the file as a slicer will see it (float32 STL, vertices merged
+        # by position), not the in-memory solid.
+        mesh = load_mesh(stl)
         report = check_mesh(mesh, name=name, material=material, infill=infill, supports=supports)
         png = out_dir / (f"preview-{part}.png" if part else "preview.png")
         if preview:
@@ -111,6 +122,15 @@ def build_model(
 
     write_print_notes(out_dir, slug, meta, params, material, infill, results)
     return results
+
+
+def color_change_note(z: float) -> str:
+    """Slicer instruction for a two-colour print of a single-colour relief."""
+    layer = load_printer().design["layer_height"]
+    n = round(z / layer) + 1
+    return (f"**Optional colour change:** at Z = {z:g} mm (start of layer {n} at {layer} mm layers) — "
+            "base colour below, raised details in the second colour. In Anycubic Slicer Next / OrcaSlicer: "
+            "slice, drag the layer slider to that layer, right-click > Add colour change.")
 
 
 def write_print_notes(out_dir: Path, slug: str, meta: dict, params: dict, material: str, infill: float, results: list[PartResult]) -> Path:
@@ -127,6 +147,8 @@ def write_print_notes(out_dir: Path, slug: str, meta: dict, params: dict, materi
     ]
     if meta.get("description"):
         lines += [meta["description"], ""]
+    if meta.get("color_change_z") is not None:
+        lines += [color_change_note(float(meta["color_change_z"])), ""]
     if meta.get("notes"):
         lines += ["## Notes", ""] + [f"- {n}" for n in meta["notes"]] + [""]
     lines += ["## Parameters used", "", "| Param | Value |", "|---|---|"]

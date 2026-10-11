@@ -124,3 +124,137 @@ def test_render_does_not_flag_exact_45_degree_chamfers(tmp_path):
     red_like = (px[:, 0] > 150) & (px[:, 1] < 100) & (px[:, 2] < 100)
     assert not red_like.any()
     assert RED[0] > 150  # sanity: the check above would catch the overhang colour
+
+
+def test_thin_wall_ignores_sharp_corners_on_thick_features():
+    from printlib.shapes import offset, rect
+
+    # Raised plus signs with 1.2 mm strokes: lots of square corners, nothing thin.
+    plus = rect(6, 1.2) + rect(1.2, 6)
+    base = box(60, 20, 2)
+    for i in range(6):
+        base = label_face(base, plus.translate((-25 + i * 10, 0)), "+z", depth=0.8, raised=True)
+    assert "thin-wall" not in codes(check_mesh(to_trimesh(base)), WARN)
+    # Same pattern with 0.5 mm strokes must still be flagged.
+    thin = box(60, 20, 2)
+    for i in range(6):
+        thin = label_face(thin, (rect(6, 0.5) + rect(0.5, 6)).translate((-25 + i * 10, 0)), "+z", depth=0.8, raised=True)
+    assert "thin-wall" in codes(check_mesh(to_trimesh(thin)), WARN)
+    _ = offset
+
+
+def test_offset_has_no_micro_edges():
+    from manifold3d import CrossSection
+
+    from printlib.shapes import offset, rect
+
+    # Circle + rectangle neck: Clipper leaves ~1e-8 mm vertex pairs here without simplify.
+    knob = CrossSection.circle(4).translate((4, 0)) + rect(3, 4.4).translate((1, 0))
+    pts = np.vstack(offset(knob, 0.25).to_polygons())
+    seg = np.linalg.norm(np.diff(np.vstack([pts, pts[:1]]), axis=0), axis=1)
+    assert seg.min() > 1e-4
+
+
+def test_built_stl_on_disk_is_watertight(tmp_path):
+    from printlib.meshio import load_mesh
+
+    for r in build_model(MODELS / "word-part-tiles", out_dir=tmp_path, preview=False):
+        assert load_mesh(r.stl).is_watertight, r.stl.name
+
+
+def test_render_outlines_shallow_relief(tmp_path):
+    from PIL import Image
+
+    from printlib.render import render
+    from printlib.shapes import rect
+
+    plate = label_face(box(150, 40, 3), rect(10, 10), "+z", depth=0.6, raised=True)
+    out = render(plate, tmp_path / "r.png", views=("top",), size=600)
+    px = np.asarray(Image.open(out).convert("L"))
+    # Edges of the 0.6 mm raised square sit near the image centre; they must be drawn dark.
+    centre = px[320:405, 260:340]  # sheet header is 62 px; square is centred on (362, 300)
+    assert (centre < 60).sum() > 40
+
+
+def test_bundle_zips_selected_parts_with_job_sheet(tmp_path):
+    import zipfile
+
+    from printlib.bundle import make_bundle
+
+    z = make_bundle(["tolerance-test:peg", "calibration-cube"], name="job", out_dir=tmp_path)
+    names = set(zipfile.ZipFile(z).namelist())
+    assert {"job/JOB.md", "job/tolerance-test-peg.stl", "job/calibration-cube.stl",
+            "job/previews/tolerance-test-peg.png", "job/notes/tolerance-test-PRINT.md"} <= names
+    assert "job/tolerance-test-plate.stl" not in names  # only the requested part
+    sheet = zipfile.ZipFile(z).read("job/JOB.md").decode()
+    assert "2 file(s)" in sheet and "Before each print" in sheet
+
+
+def test_bundle_rejects_unknown_part_and_multi_model_overrides(tmp_path):
+    from printlib.bundle import make_bundle
+
+    with pytest.raises(KeyError):
+        make_bundle(["tolerance-test:nope"], out_dir=tmp_path)
+    with pytest.raises(ValueError):
+        make_bundle(["tolerance-test", "calibration-cube"], overrides={"size": 10.0}, out_dir=tmp_path)
+
+
+def test_bundle_merges_parts_of_same_model():
+    from printlib.bundle import _group
+
+    g = _group(["tolerance-test:peg", "tolerance-test:plate", "calibration-cube", "calibration-cube:x"])
+    assert {k.name: v for k, v in g.items()} == {"tolerance-test": {"peg", "plate"}, "calibration-cube": None}
+
+
+def test_pack_wraps_rows_and_rejects_oversize():
+    from printlib.shapes import pack
+
+    plate = pack([box(40, 10, 2)] * 6, width=100, gap=5)  # 2 per row -> 3 rows
+    ext = to_trimesh(plate).extents
+    assert ext[0] == pytest.approx(85, abs=0.01) and ext[1] == pytest.approx(40, abs=0.01)
+    with pytest.raises(ValueError):
+        pack([box(200, 200, 2)] * 2, width=400)
+
+
+def test_extrude_drops_micro_edges_from_2d_booleans(tmp_path):
+    from printlib.meshio import export_stl, load_mesh
+    from printlib.shapes import extrude, rect
+
+    # Exact doll-house spatula profile: blade minus rounded slots plus shaft left
+    # ~1e-8 mm vertex pairs that tore the exported STL before extrude() simplified.
+    L = 280 / 6
+    blade = rect(11, 10, r=1.2).translate((L / 2 - 5.5, 0))
+    for y in (-2.6, 0, 2.6):
+        blade = blade - rect(6.5, 1.1, r=0.5).translate((L / 2 - 5, y))
+    solid = extrude(blade + rect(L - 10, 2.4, r=1.0).translate((-5, 0)), 1.2, bottom_chamfer=0.2)
+    assert load_mesh(export_stl(solid, tmp_path / "s.stl")).is_watertight
+
+
+def test_color_change_note_in_print_notes(tmp_path):
+    from printlib.build import color_change_note, write_print_notes
+
+    note = color_change_note(1.6)
+    assert "Z = 1.6 mm" in note and "layer 9" in note
+    path = write_print_notes(tmp_path, "x", {"color_change_z": 1.6}, {}, "PLA", 0.15, [])
+    assert "Optional colour change" in path.read_text()
+
+
+def test_stroke_text_has_uniform_printable_strokes_and_gaps():
+    from manifold3d import JoinType
+
+    from printlib.shapes import stroke_text
+
+    w = 0.9
+    t = stroke_text("BOÖTES 8 AB", cap=4.4, width=1.0, gap=1.05)
+    assert t.area() > 0
+    # Accents are folded rather than dropped: BOÖTES keeps its letter.
+    assert stroke_text("BOÖTES").bounds()[2] - stroke_text("BOÖTES").bounds()[0] == pytest.approx(
+        stroke_text("BOOTES").bounds()[2] - stroke_text("BOOTES").bounds()[0], abs=1e-6)
+
+    def morph(a, d1, d2):
+        return a.offset(d1, JoinType.Round, circular_segments=24).offset(d2, JoinType.Round, circular_segments=24)
+
+    thin = (t - morph(t, -w / 2 + 0.01, w / 2 - 0.01)).offset(-0.1, JoinType.Round, circular_segments=24).area()
+    gaps = (morph(t, w / 2 - 0.01, -w / 2 + 0.01) - t).offset(-0.1, JoinType.Round, circular_segments=24).area()
+    assert thin == pytest.approx(0, abs=0.05)
+    assert gaps < 0.03 * t.area()  # only the acute vertices of V/W/A shapes

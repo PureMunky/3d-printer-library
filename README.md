@@ -20,7 +20,7 @@ bed contact) before it's committed — so what's in `models/` should print first
 | [word-part-tiles](models/word-part-tiles/) | Interlocking prefix / base / suffix tiles for morphology | 3 |
 | [doll-house-accessories](models/doll-house-accessories/) | 1:6 Barbie-scale home & kitchen accessories, plus a single gummy-bear STL to duplicate | 2 |
 | [planisphere](models/planisphere/) | Two-disc star wheel for Pataskala, OH, with the window cut to the measured horizon; verified against astropy | 3 |
-| [light-cycle](models/light-cycle/) | Elf-on-the-shelf-sized low, rounded sci-fi light cycle: two glue-up halves with two-colour glow stripes, plus a light-ribbon trail | 3 |
+| [light-cycle](models/light-cycle/) | Elf-on-the-shelf-sized replica-style light cycle: hubless glowing wheels, two glue-up halves, two-colour accents, plus a light-ribbon trail | 3 |
 
 Each model folder has the STL(s), a `preview.png`, and a generated `PRINT.md`
 with material, temps, estimated time/filament and the printability report.

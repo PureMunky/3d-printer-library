@@ -1,16 +1,18 @@
-"""Elf-scale light cycle — a low, rounded, modern sci-fi motorbike sized for a
-~30 cm shelf elf (or any similar plush/figure) to ride.
+"""Elf-scale light cycle — a modern replica-style light cycle sized for a
+~30 cm shelf elf (or any similar plush/figure) to ride: big hubless wheels
+with glowing tyre bands, fender shells hugging each wheel, a low spine with a
+seat dip, and swoosh accents.
 
 Construction (print-friendly by design):
-  * The side silhouette is a smooth closed spline wrapped around two wheels,
-    so the body reads as one sleek low shell rather than a frame.
+  * The side silhouette is the union of two tyres, two offset fender shells
+    and a smooth spline spine, filleted together. The wheel centres are open
+    straight through (vertical holes as printed, so no supports).
   * The bike is two mirrored side halves, each a flat slab printed lying on
     its inner (glue) face. The outer edge has a large quarter-round
     roundover, so the assembled bike has a soft, pill-shaped cross-section.
     A roundover on the *top* of a print only ever steps inward, so there are
     no overhangs and no supports.
-  * The glow stripes follow the silhouette automatically (an inset band of
-    the outline) and sit 0.8 mm proud of the flat top. Add a filament change
+  * The tyre bands and tapered swooshes sit 0.8 mm proud of the flat top. Add a filament change
     at the slab-top height and they print in a second colour.
   * The halves line up with 1.75 mm filament offcuts as pins, then glue.
   * Optional `trail`: a free-standing curved "light ribbon" to set behind the
@@ -42,13 +44,13 @@ P = load_printer()
 
 META = {
     "title": "Elf-scale light cycle",
-    "description": "Low, rounded, modern light cycle sized for a 30 cm shelf elf: two glue-together halves with two-colour glow stripes, plus an optional curved light-ribbon trail.",
+    "description": "Replica-style light cycle sized for a 30 cm shelf elf: hubless glowing wheels, two glue-together halves with two-colour glow accents, plus an optional curved light-ribbon trail.",
     "material": "PLA",
     "infill": 0.15,
     "supports": False,
     "notes": [
-        "Default size ≈ 272 mm long × 79 mm tall × 42 mm wide; the seat dip is ~62 mm up for a ~30 cm elf to straddle (or lie forward, rider-style).",
-        "Print both halves flat as exported (inner face on the bed). They fit on one plate together (~272 × 165 mm).",
+        "Default size ≈ 274 mm long × 89 mm tall × 42 mm wide; the seat dip is ~60 mm up for a ~30 cm elf to straddle (or lie forward, rider-style).",
+        "Print both halves flat as exported (inner face on the bed). They fit on one plate together (~274 × 185 mm).",
         "Two-colour stripes: add a filament change / pause at the slab top (Z = half_width, 20.0 mm by default). "
         "In Anycubic Slicer Next: preview slider → right-click the first layer above 20.0 mm → Add color change (M600) or Add pause. "
         "Start in black, swap to cyan (classic) or orange (villain) PLA.",
@@ -61,36 +63,36 @@ META = {
 }
 
 PARAMS = {
-    "scale": 1.0,          # 1.0 ≈ 272 mm long (elf-sized); 0.5 makes a desk toy
+    "scale": 1.0,          # 1.0 ≈ 274 mm long (elf-sized); 0.5 makes a desk toy
     "half_width": 20.0,    # slab thickness of each half (bike width ≈ 2× this) at scale 1
-    "roundover": 7.0,      # radius of the rounded outer edge at scale 1
+    "roundover": 5.0,      # radius of the rounded outer edge at scale 1
     "line_height": 0.8,    # raised glow-stripe height (4 layers)
-    "line_width": 2.4,     # glow-stripe width at scale 1
     "pin_d": 1.75,         # alignment pin = filament diameter
     "trail": True,         # also export the free-standing light-ribbon trail
     "trail_height": 40.0,
 }
 
-WHEEL_R = 40.0
-REAR = (50.0, 40.0)
-FRONT = (222.0, 40.0)
-# Wheel face detail radii — all inside the flat top, i.e. clear of the
-# roundover even where the wheel is flattened for its contact patch.
-GROOVE_R = 28.6
-TYRE_R = 24.4
-RIM_IN, RIM_OUT = 11.0, 22.6
-HUB_R = 7.0
+# Proportions follow the replica light cycles: big hubless wheels about
+# 1.5 diameters apart, fender shells wrapped round the outside of each.
+WHEEL_R = 36.0          # tyre outer radius
+OPEN_R = 26.0           # hubless wheel: open centre, straight through the bike
+BAND_IN, BAND_OUT = 27.5, 35.0   # raised glowing tyre band on the side face
+REAR = (48.0, 38.0)
+FRONT = (228.0, 38.0)
+# Fender shells hug the outside of each wheel: a slightly larger circle pushed
+# back (rear) / forward (front) and up, so the tyre peeks out underneath.
+REAR_SHELL = ((REAR[0] - 6, REAR[1] + 6), WHEEL_R + 6)
+FRONT_SHELL = ((FRONT[0] + 5, FRONT[1] + 5), WHEEL_R + 5)
 
-# Control points of the side silhouette (x along the bike, front at +x; y up),
-# traced counter-clockwise from the tail. A closed Catmull-Rom spline runs
-# through them, so the outline is smooth everywhere.
-BODY = [
-    (2, 44), (14, 64), (44, 77), (84, 73), (112, 63), (136, 60), (162, 63),
-    (196, 74), (230, 80), (258, 70), (272, 50), (268, 30), (246, 14),
-    (190, 10), (136, 9), (82, 10), (26, 15), (6, 28),
+# Spine between the wheels (x along the bike, front at +x; y up): high rear
+# deck, deep seat dip, rising tank into the front shell, curved belly.
+SPINE = [
+    (40, 80), (70, 90), (100, 90), (116, 78), (128, 64), (142, 60), (162, 64),
+    (184, 72), (204, 80), (226, 82), (238, 30), (206, 16), (176, 18),
+    (150, 26), (120, 22), (90, 16), (62, 26),
 ]
 
-PINS = [REAR, FRONT, (136, 34)]
+PINS = [(REAR[0], 7.0), (FRONT[0], 7.0), (118, 45)]  # tyre bottoms + mid-spine
 
 
 def _spline(pts, n=24):
@@ -114,13 +116,50 @@ def _ring(r_in, r_out, center):
     return (circle(2 * r_out) - circle(2 * r_in)).translate(center)
 
 
+def _circ(center, r, s):
+    return circle(2 * r * s).translate((center[0] * s, center[1] * s))
+
+
 def _silhouette(s):
-    body = polygon(_spline(BODY) * s)
-    wheel = circle(2 * WHEEL_R * s)
-    sil = _add([body, wheel.translate((REAR[0] * s, REAR[1] * s)), wheel.translate((FRONT[0] * s, FRONT[1] * s))])
-    sil = offset(offset(sil, -4 * s), 4 * s)  # soften the wheel/body junctions
-    # Flat contact patch under each wheel so it stands steady.
+    parts = [polygon(_spline(SPINE) * s), _circ(REAR, WHEEL_R, s), _circ(FRONT, WHEEL_R, s),
+             _circ(*REAR_SHELL, s), _circ(*FRONT_SHELL, s)]
+    sil = _add(parts)
+    sil = offset(offset(sil, 5 * s), -5 * s)   # fillet the shell/spine junctions
+    sil = offset(offset(sil, -2 * s), 2 * s)   # and soften any sharp convex corners
+    # Flat contact patch under each tyre so it stands steady.
     return sil - rect(400 * s, 4 * s).translate((150 * s, 0))
+
+
+def _taper(points, widths, s):
+    """Swoosh: a stroke whose width varies point to point (tapered ends)."""
+    segs = []
+    for (p0, w0), (p1, w1) in zip(zip(points, widths), zip(points[1:], widths[1:])):
+        a = circle(w0 * s).translate((p0[0] * s, p0[1] * s))
+        b = circle(w1 * s).translate((p1[0] * s, p1[1] * s))
+        segs.append(CrossSection.batch_hull([a, b]))
+    return _add(segs)
+
+
+def _open_spline(pts, n=12):
+    """Open Catmull-Rom spline through `pts` (ends held by repeating them)."""
+    p = [pts[0]] + list(pts) + [pts[-1]]
+    closed = _spline(p, n)  # closed curve through the padded list...
+    return [tuple(q) for q in closed[n: n * (len(pts))]]  # ...keep the real span
+
+
+def _arc(center, r, a0, a1, n=24):
+    return [(center[0] + r * math.cos(math.radians(a)), center[1] + r * math.sin(math.radians(a)))
+            for a in np.linspace(a0, a1, n)]
+
+
+def _swooshes(s):
+    # Rear: a crescent from the top of the rear fender down toward the seat.
+    rear = _arc(REAR, 44, 90, 26)
+    rear_w = np.interp(np.linspace(0, 1, len(rear)), [0, 0.25, 1], [2.4, 7.0, 1.6])
+    # Front: runs forward along the tank, then sweeps down around the front tyre.
+    front = _open_spline([(132, 51), (158, 54), (178, 53), (188, 42), (188, 30), (190, 24)])
+    front_w = np.interp(np.linspace(0, 1, len(front)), [0, 0.3, 0.6, 1], [1.6, 4.0, 5.5, 1.6])
+    return _add([_taper(rear, rear_w, s), _taper(front, front_w, s)])
 
 
 def _rounded_slab(cs, h, r):
@@ -142,37 +181,33 @@ def _rounded_slab(cs, h, r):
     return union(parts)
 
 
-def _half(s, half_width, roundover, line_height, line_width, pin_d):
+def _half(s, half_width, roundover, line_height, pin_d):
     T, R = half_width * s, roundover * s
     sil = _silhouette(s)
-    body = _rounded_slab(sil, T, R)
+    body = _rounded_slab(sil, T, R)  # round the outer outline only
 
     centres = [(REAR[0] * s, REAR[1] * s), (FRONT[0] * s, FRONT[1] * s)]
-    groove_w, groove_d, recess_d = 1.4 * s, 1.0 * s, 1.2 * s
     cuts = []
-    for c in centres:
-        g = _ring(GROOVE_R * s, GROOVE_R * s + groove_w, c)            # wheel / body split line
-        cuts.append(extrude_plain(g, groove_d + 0.02).translate((0, 0, T - groove_d)))
-        r = _ring(RIM_IN * s, RIM_OUT * s, c)                          # recessed rim
-        cuts.append(extrude_plain(r, recess_d + 0.02).translate((0, 0, T - recess_d)))
+    for c in centres:  # hubless wheels: open straight through
+        cuts.append(hole(2 * OPEN_R * s, T, compensate=False).translate((c[0], c[1], 0)))
+    # Engine vents: short engraved slots low on the spine.
+    for y in (34, 39, 44):
+        slot = stroke([(142 * s, y * s), (160 * s, (y + 1.5) * s)], 2.2 * s, segments=16)
+        cuts.append(extrude_plain(slot, 1.2 * s + 0.02).translate((0, 0, T - 1.2 * s)))
     pin_depth = min(6.0, T - 3.0)
     for px, py in PINS:
         cuts.append(hole(pin_d + 2 * P.tol("snug"), pin_depth).translate((px * s, py * s, 0)))
     body = difference(body, cuts)
 
-    # Glow stripe = a band following the outline just inside the roundover,
-    # kept on the upper body (tail → seat → nose) plus a belly run.
-    lw = line_width * s
-    inset = R + 2.5 * s
-    band = offset(sil, -inset) - offset(sil, -(inset + lw))
-    upper = rect(400 * s, 200 * s).translate((150 * s, (WHEEL_R + 100) * s))
-    belly = rect(70 * s, 30 * s).translate(((REAR[0] + FRONT[0]) / 2 * s, 0))
-    glow = band ^ _add([upper, belly])
+    # Glow: the tyre bands plus two swooshes, all on the flat top (clear of
+    # the roundover and of the wheel openings).
+    keep = offset(sil, -(R + 1.0 * s))
     for c in centres:
-        glow = glow - _ring((GROOVE_R - 1.0) * s, (GROOVE_R + 1.0) * s + groove_w, c)
-        glow = glow + _ring(TYRE_R * s, TYRE_R * s + lw, c)            # tyre ring
-        glow = glow + _ring(HUB_R * s, HUB_R * s + lw, c)              # hub ring
-    glow = glow.simplify(1e-3)
+        keep = keep - circle(2 * (OPEN_R + 1.5) * s).translate(c)
+    glow = _add([_ring(BAND_IN * s, BAND_OUT * s, c) for c in centres] + [_swooshes(s)])
+    for c in centres:  # keep swooshes off the tyre bands, so the band edge stays crisp
+        glow = glow - _ring((BAND_OUT + 0.01) * s, (BAND_OUT + 2.5) * s, c)
+    glow = (glow ^ keep).simplify(1e-3)
     sink = 0.3  # sink stripes into the slab so the union is solid
     body = body + extrude_plain(glow, sink + line_height).translate((0, 0, T - sink))
     return on_bed(body)
@@ -188,8 +223,8 @@ def _trail(s, h):
     return on_bed(union(wall, foot))
 
 
-def build(scale, half_width, roundover, line_height, line_width, pin_d, trail, trail_height):
-    half = _half(scale, half_width, roundover, line_height, line_width, pin_d)
+def build(scale, half_width, roundover, line_height, pin_d, trail, trail_height):
+    half = _half(scale, half_width, roundover, line_height, pin_d)
     parts = {"half-a": half, "half-b": on_bed(half.mirror((1, 0, 0)))}
     if trail:
         parts["trail"] = _trail(scale, trail_height)

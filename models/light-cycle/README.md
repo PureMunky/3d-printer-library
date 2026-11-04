@@ -1,8 +1,10 @@
 # Elf-scale light cycle
 
-A sleek sci-fi light cycle sized for a ~30 cm shelf elf to ride: about
-266 × 46 × 104 mm, with a seat dip ~79 mm up so the elf straddles it with its
-legs dangling. Glow stripes and wheel rings are raised on both sides so a
+A low, rounded, modern sci-fi light cycle sized for a ~30 cm shelf elf to
+ride: about 272 × 42 × 79 mm. The side outline is one smooth spline wrapped
+around the wheels, and the outer edges have a 7 mm roundover, so the
+assembled bike has a soft pill-shaped cross-section. The seat dip is ~62 mm
+up for the elf to straddle, or lie forward rider-style. Glow stripes and wheel rings are raised on both sides so a
 single filament change gives you a black bike with cyan (or orange) lights.
 
 ![preview](preview-half-a.png)
@@ -13,14 +15,14 @@ single filament change gives you a black bike with cyan (or orange) lights.
 |---|---|---|
 | `light-cycle-half-a.stl` | flat, as exported | one side of the bike |
 | `light-cycle-half-b.stl` | flat, as exported | the mirrored other side |
-| `light-cycle-trail.stl` | upright, as exported | optional free-standing L-shaped light wall |
+| `light-cycle-trail.stl` | upright, as exported | optional free-standing curved light ribbon |
 
-Both halves fit on one plate (~266 × 220 mm). No supports, no brim.
+Both halves fit on one plate (~272 × 165 mm). No supports, no brim.
 
 ## Two-colour lights
 
 Every stripe starts above the slab top, so: start in **black**, and in Anycubic
-Slicer Next drag the preview slider to the first layer above **Z = 22.0 mm**,
+Slicer Next drag the preview slider to the first layer above **Z = 20.0 mm**,
 right-click → *Add color change* (or *Add pause*), and swap to **cyan** PLA
 (orange for the villain look). Only the stripes and wheel rings print in the
 second colour. Print the trail in translucent or glow-in-the-dark PLA.
@@ -38,12 +40,13 @@ second colour. Print the trail in translucent or glow-in-the-dark PLA.
 | Param | Default | Notes |
 |---|---|---|
 | `scale` | 1.0 | 0.5 makes a ~13 cm desk toy (for a smaller figure) |
-| `half_width` | 22 | thickness of each half; bike width ≈ 2× this + stripes |
+| `half_width` | 20 | thickness of each half; bike width ≈ 2× this + stripes |
+| `roundover` | 7 | radius of the rounded outer edge |
 | `line_height` | 0.8 | raised stripe height (4 layers) |
 | `line_width` | 2.4 | stripe width |
 | `pin_d` | 1.75 | alignment pin diameter (filament) |
 | `trail` | true | export the light-wall trail |
-| `trail_height` | 45 | wall height |
+| `trail_height` | 40 | ribbon height |
 
 ```bash
 python -m printlib build light-cycle --set scale=0.5 --out scratch/mini-cycle

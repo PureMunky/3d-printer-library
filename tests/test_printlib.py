@@ -258,3 +258,15 @@ def test_stroke_text_has_uniform_printable_strokes_and_gaps():
     gaps = (morph(t, w / 2 - 0.01, -w / 2 + 0.01) - t).offset(-0.1, JoinType.Round, circular_segments=24).area()
     assert thin == pytest.approx(0, abs=0.05)
     assert gaps < 0.03 * t.area()  # only the acute vertices of V/W/A shapes
+
+
+def test_chamfered_extrude_is_one_solid():
+    # Stacked chamfer steps used to leave float-rounding gaps that split the
+    # top of tall chamfered slabs into separate bodies.
+    from printlib.shapes import extrude, rect
+
+    for h, top, bottom in [(22.0, 1.2, 0.4), (5.0, 0.6, 0.4), (13.7, 1.0, 0.0), (3.0, 0.0, 0.4)]:
+        m = extrude(rect(50, 30, 5), h, bottom_chamfer=bottom, top_chamfer=top)
+        assert len(m.decompose()) == 1, (h, top, bottom)
+        lo, hi = m.bounding_box()[2], m.bounding_box()[5]
+        assert abs(lo) < 1e-9 and abs(hi - h) < 1e-9

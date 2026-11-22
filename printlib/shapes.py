@@ -260,19 +260,26 @@ def extrude(cs: CrossSection, h: float, bottom_chamfer: float = 0.0, top_chamfer
     cs = cs.simplify(1e-4)  # 2D booleans can also leave ~1e-8 mm vertex pairs
     body_lo, body_hi = bottom_chamfer, h - top_chamfer
     parts = [extrude_plain(cs, body_hi - body_lo).translate((0, 0, body_lo))]
-    for c, z0, direction in ((bottom_chamfer, 0.0, 1), (top_chamfer, body_hi, -1)):
-        if c <= 0:
-            continue
-        steps = max(1, round(c / LAYER))
-        dz = c / steps
+    # Each chamfer step runs from its own step face to the middle of the body,
+    # so consecutive steps overlap instead of meeting at float-rounded faces
+    # (stacked dz-thick slabs left hairline gaps that split off as bodies).
+    mid = (body_lo + body_hi) / 2
+    if bottom_chamfer > 0:
+        steps = max(1, round(bottom_chamfer / LAYER))
+        dz = bottom_chamfer / steps
         for i in range(steps):
-            # bottom: inset shrinks as we go up; top: inset grows as we go up
-            frac = (steps - i) / steps if direction == 1 else (i + 1) / steps
-            inset = c * frac
-            layer = offset(cs, -inset)
-            if layer.is_empty():
-                continue
-            parts.append(extrude_plain(layer, dz).translate((0, 0, z0 + i * dz)))
+            layer = offset(cs, -bottom_chamfer * (steps - i) / steps)
+            if not layer.is_empty():
+                z = i * dz
+                parts.append(extrude_plain(layer, mid - z).translate((0, 0, z)))
+    if top_chamfer > 0:
+        steps = max(1, round(top_chamfer / LAYER))
+        dz = top_chamfer / steps
+        for i in range(steps):
+            layer = offset(cs, -top_chamfer * (i + 1) / steps)
+            if not layer.is_empty():
+                z = h if i == steps - 1 else body_hi + (i + 1) * dz
+                parts.append(extrude_plain(layer, z - mid).translate((0, 0, mid)))
     return union(parts)
 
 

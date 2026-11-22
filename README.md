@@ -22,6 +22,7 @@ bed contact) before it's committed — so what's in `models/` should print first
 | [planisphere](models/planisphere/) | Two-disc star wheel for Pataskala, OH, with the window cut to the measured horizon; verified against astropy | 3 |
 | [light-cycle](models/light-cycle/) | Elf-on-the-shelf-sized replica-style light cycle: hubless glowing wheels, two glue-up halves, two-colour accents, plus a light-ribbon trail | 3 |
 | [ghost-buggy](models/ghost-buggy/) | Elf-on-the-shelf-sized clamshell haunted-ride car: two support-free halves plus a drop-in lap bar | 3 |
+| [hitchhiker-ghosts](models/hitchhiker-ghosts/) | Original trio of elf-scale sheet ghosts thumbing a ride (one with a sign, one with a suitcase), support-free | 3 |
 
 Each model folder has the STL(s), a `preview.png`, and a generated `PRINT.md`
 with material, temps, estimated time/filament and the printability report.
